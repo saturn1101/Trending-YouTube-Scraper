@@ -15,15 +15,18 @@ header = ["video_id"] + snippet_features + ["trending_date", "tags", "view_count
                                             "comment_count", "thumbnail_link", "comments_disabled",
                                             "ratings_disabled", "description"]
 
-
+# Function to get API key & country codes
 def setup(api_path, code_path):
+    # Open api file & read the first line
     with open(api_path, 'r') as file:
         api_key = file.readline()
 
+    # Open country code file & get the list of country codes while removing white spaces at the end of the string
     with open(code_path) as file:
         country_codes = [x.rstrip() for x in file]
 
     return api_key, country_codes
+
 
 
 def prepare_feature(feature):
@@ -35,7 +38,7 @@ def prepare_feature(feature):
 
 def api_request(page_token, country_code):
     # Builds the URL and requests the JSON from it
-    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={api_key}"
+    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&publishedBefore=2021-01-01T00:00:00Z&maxResults=50&key={api_key}"
     request = requests.get(request_url)
     if request.status_code == 429:
         print("Temp-Banned due to excess requests, please wait and continue later")
@@ -105,7 +108,10 @@ def get_pages(country_code, next_page_token="&"):
 
     # Because the API uses page tokens (which are literally just the same function of numbers everywhere) it is much
     # more inconvenient to iterate over pages, but that is what is done here.
-    while next_page_token is not None:
+    #while next_page_token is not None:
+    for i in range(1000):
+        if next_page_token is None:
+            continue
         # A page of data i.e. a list of videos and all needed data
         video_data_page = api_request(next_page_token, country_code)
 
@@ -117,6 +123,7 @@ def get_pages(country_code, next_page_token="&"):
         # Get all of the items as a list and let get_videos return the needed features
         items = video_data_page.get('items', [])
         country_data += get_videos(items)
+        print(next_page_token)
 
     return country_data
 

@@ -36,9 +36,9 @@ def prepare_feature(feature):
     return f'"{feature}"'
 
 
-def api_request(page_token, country_code):
+def api_request(page_token, country_code, category_id):
     # Builds the URL and requests the JSON from it
-    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&publishedBefore=2021-01-01T00:00:00Z&maxResults=50&key={api_key}"
+    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&snippet.publishedAt=2021-01-01T00%3A00%3A00Z&maxResults=50&key={api_key}&videoCategoryId={category_id}"
     request = requests.get(request_url)
     if request.status_code == 429:
         print("Temp-Banned due to excess requests, please wait and continue later")
@@ -100,20 +100,17 @@ def get_videos(items):
                                                                        comment_count, thumbnail_link, comments_disabled,
                                                                        ratings_disabled, description]]
         lines.append(",".join(line))
+        print(lines)
     return lines
 
 
-def get_pages(country_code, next_page_token="&"):
+def get_pages(country_code, category_id, next_page_token="&"):
     country_data = []
-
     # Because the API uses page tokens (which are literally just the same function of numbers everywhere) it is much
     # more inconvenient to iterate over pages, but that is what is done here.
-    #while next_page_token is not None:
-    for i in range(1000):
-        if next_page_token is None:
-            continue
+    while next_page_token is not None:
         # A page of data i.e. a list of videos and all needed data
-        video_data_page = api_request(next_page_token, country_code)
+        video_data_page = api_request(next_page_token, country_code, category_id)
 
         # Get the next page token and build a string which can be injected into the request with it, unless it's None,
         # then let the whole thing be None so that the loop ends after this cycle
@@ -142,7 +139,12 @@ def write_to_file(country_code, country_data):
 
 def get_data():
     for country_code in country_codes:
-        country_data = [",".join(header)] + get_pages(country_code)
+        country_data = []
+
+        for category_id in range(1, 100):
+            country_data += get_pages(country_code, category_id)
+
+        country_data = [",".join(header)] + country_data
         write_to_file(country_code, country_data)
 
 

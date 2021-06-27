@@ -100,7 +100,6 @@ def get_videos(items):
                                                                        comment_count, thumbnail_link, comments_disabled,
                                                                        ratings_disabled, description]]
         lines.append(",".join(line))
-        print(lines)
     return lines
 
 
